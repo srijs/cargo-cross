@@ -5,7 +5,9 @@ use directories::ProjectDirs;
 use failure::Error;
 use heck::ShoutySnakeCase;
 use platforms;
+use semver::VersionReq;
 
+use cargo::{CargoPackage, CargoProject};
 use package::{PackageInstall, PackageManager};
 
 #[derive(Debug)]
@@ -53,16 +55,39 @@ impl ToolchainManager {
             .unwrap_or(false)
     }
 
-    pub fn start_toolchain_installation(&self, target: &str) -> Result<PackageInstall, Error> {
+    pub fn is_toolchain_feature_available(&self, target: &str, cargo_pkg: &CargoPackage) -> bool {
+        self.find_toolchain_feature(target, cargo_pkg).is_some()
+    }
+
+    pub fn is_toolchain_feature_installed(&self, target: &str, cargo_pkg: &CargoPackage) -> bool {
+        self.find_toolchain_feature(target, cargo_pkg)
+            .map(|feature| self.get_toolchain_feature_path(feature).exists())
+            .unwrap_or(false)
+    }
+
+    pub fn start_toolchain_base_installation(&self, target: &str) -> Result<PackageInstall, Error> {
         let base = self.find_toolchain_base(target)
             .ok_or_else(|| format_err!("no toolchain available for target {}", target))?;
         let path = self.get_toolchain_base_path(&base);
         self.package_manager.install(base.path, base.size, path)
     }
 
+    pub fn start_toolchain_feature_installation(
+        &self,
+        target: &str,
+        cargo_pkg: &CargoPackage,
+    ) -> Result<PackageInstall, Error> {
+        let feature = self.find_toolchain_feature(target, cargo_pkg)
+            .ok_or_else(|| format_err!("toolchain feature not available for target {}", target))?;
+        let path = self.get_toolchain_feature_path(&feature);
+        self.package_manager
+            .install(feature.path, feature.size, path)
+    }
+
     pub fn get_toolchain_environment(
         &self,
         target: &str,
+        project: &CargoProject,
     ) -> Result<impl IntoIterator<Item = (String, OsString)>, Error> {
         let base = self.find_toolchain_base(target)
             .ok_or_else(|| format_err!("no toolchain available for target {}", target))?;
@@ -86,14 +111,29 @@ impl ToolchainManager {
         cflags.push(" --sysroot ");
         cflags.push(&path);
 
-        Ok(vec![
+        let mut envs = vec![
             (
                 format!("CARGO_TARGET_{}_LINKER", target.to_shouty_snake_case()),
                 gcc_path.clone().into_os_string(),
             ),
             ("TARGET_CC".into(), gcc_path.clone().into_os_string()),
             ("TARGET_CFLAGS".into(), cflags),
-        ])
+        ];
+
+        for cargo_pkg in project.packages.iter() {
+            if let Some(feature) = self.find_toolchain_feature(target, &cargo_pkg) {
+                let feature_path = self.get_toolchain_feature_path(&feature);
+                for (k, v) in feature.env_vars {
+                    envs.push((
+                        (*k).into(),
+                        v.replace("{CARGO_CROSS_FEAT_PATH}", &feature_path.to_string_lossy())
+                            .into(),
+                    ));
+                }
+            }
+        }
+
+        Ok(envs)
     }
 
     fn find_toolchain_base(&self, target: &str) -> Option<&ToolchainBase> {
@@ -102,13 +142,39 @@ impl ToolchainManager {
         })
     }
 
+    fn find_toolchain_feature(
+        &self,
+        target: &str,
+        cargo_pkg: &CargoPackage,
+    ) -> Option<&ToolchainFeature> {
+        TOOLCHAIN_FEATURES
+            .iter()
+            .filter(|t| t.target_platform_triple == target && t.crate_name == cargo_pkg.name)
+            .find(|t| {
+                let vreq =
+                    VersionReq::parse(t.crate_version_req).expect("failed to parse version req");
+                vreq.matches(&cargo_pkg.version)
+            })
+    }
+
     fn get_toolchain_base_path(&self, base: &ToolchainBase) -> PathBuf {
         let mut dir = self.dirs.cache_dir().to_path_buf();
         dir.extend(&[
             "target",
             base.target_platform_triple,
             "base",
-            &base.checksum[..10],
+            &base.checksum,
+        ]);
+        dir
+    }
+
+    fn get_toolchain_feature_path(&self, feature: &ToolchainFeature) -> PathBuf {
+        let mut dir = self.dirs.cache_dir().to_path_buf();
+        dir.extend(&[
+            "target",
+            feature.target_platform_triple,
+            "feature",
+            &feature.checksum,
         ]);
         dir
     }
@@ -119,8 +185,8 @@ struct ToolchainBase {
     host_platform_triple: &'static str,
     gcc_version: &'static str,
     path: &'static str,
-    size: u64,
     checksum: &'static str,
+    size: u64,
 }
 
 static TOOLCHAIN_MIRROR: &str = "https://d3ojaw7tkwhzj5.cloudfront.net/";
@@ -131,5 +197,28 @@ static TOOLCHAINS_BASE: &[ToolchainBase] = &[ToolchainBase {
     gcc_version: "4.8.5",
     path: "target/x86_64-unknown-linux-gnu/base-x86_64-apple-darwin-36f6e7a0.tar.bz2",
     size: 74774494,
-    checksum: "5280e4a4bf8446da89bdddeea3f891cc9feb1681e8bfdb35317e99617746dd0e",
+    checksum: "36f6e7a0",
+}];
+
+struct ToolchainFeature {
+    target_platform_triple: &'static str,
+    crate_name: &'static str,
+    crate_version_req: &'static str,
+    path: &'static str,
+    size: u64,
+    checksum: &'static str,
+    env_vars: &'static [(&'static str, &'static str)],
+}
+
+static TOOLCHAIN_FEATURES: &[ToolchainFeature] = &[ToolchainFeature {
+    target_platform_triple: "x86_64-unknown-linux-gnu",
+    crate_name: "openssl-sys",
+    crate_version_req: "^0.9",
+    path: "target/x86_64-unknown-linux-gnu/feat-openssl-1.0.2o-f7f30de1.tar.bz2",
+    size: 1590145,
+    checksum: "f7f30de1",
+    env_vars: &[
+        ("OPENSSL_DIR", "{CARGO_CROSS_FEAT_PATH}"),
+        ("OPENSSL_STATIC", "1"),
+    ],
 }];

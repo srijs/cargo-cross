@@ -11,6 +11,11 @@ extern crate log;
 extern crate pbr;
 extern crate platforms;
 extern crate reqwest;
+extern crate semver;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
 #[macro_use]
 extern crate structopt;
 extern crate tar;
@@ -25,9 +30,13 @@ use indicatif::{ProgressBar, ProgressStyle};
 use structopt::clap::AppSettings;
 use structopt::StructOpt;
 
+mod cargo;
 mod package;
 mod toolchains;
 mod utils;
+
+use self::cargo::CargoOptions;
+use self::package::PackageInstall;
 use self::toolchains::ToolchainManager;
 
 #[derive(StructOpt)]
@@ -45,13 +54,7 @@ enum Command {
         author = "",
         version = ""
     )]
-    Build(CommandBuildOpts),
-}
-
-#[derive(StructOpt)]
-struct CommandBuildOpts {
-    #[structopt(name = "TARGET", long = "target")]
-    target: String,
+    Build(CargoOptions),
 }
 
 fn main() {
@@ -72,7 +75,7 @@ fn command(dirs: ProjectDirs) -> Result<(), Error> {
     }
 }
 
-fn command_build(dirs: ProjectDirs, opts: CommandBuildOpts) -> Result<(), Error> {
+fn command_build(dirs: ProjectDirs, opts: CargoOptions) -> Result<(), Error> {
     let manager = ToolchainManager::new(&dirs);
 
     let info = manager.get_toolchain_info(&opts.target).ok_or_else(|| {
@@ -98,15 +101,29 @@ fn command_build(dirs: ProjectDirs, opts: CommandBuildOpts) -> Result<(), Error>
     );
 
     if !manager.is_toolchain_base_installed(&opts.target) {
-        install_toolchain_base(&manager, &opts.target)?;
+        let install = manager.start_toolchain_base_installation(&opts.target)?;
+        package_install_progress(install)?;
     }
 
-    let mut build_command = process::Command::new("cargo");
-    build_command.args(&["build", "--target", &opts.target]);
-    build_command.envs(manager.get_toolchain_environment(&opts.target)?);
+    let metadata = cargo::metadata(&opts)?;
 
-    let status = build_command.status()?;
+    for package in metadata.packages.iter() {
+        if manager.is_toolchain_feature_available(&opts.target, &package) {
+            println!(
+                "{:>12} {} v{}",
+                style("Support").magenta().bold(),
+                package.name,
+                package.version
+            );
+            if !manager.is_toolchain_feature_installed(&opts.target, &package) {
+                let install = manager.start_toolchain_feature_installation(&opts.target, &package)?;
+                package_install_progress(install)?;
+            }
+        }
+    }
 
+    let env = manager.get_toolchain_environment(&opts.target, &metadata)?;
+    let status = cargo::build(&opts, env)?;
     if !status.success() {
         process::exit(1);
     }
@@ -114,11 +131,7 @@ fn command_build(dirs: ProjectDirs, opts: CommandBuildOpts) -> Result<(), Error>
     Ok(())
 }
 
-fn install_toolchain_base(manager: &ToolchainManager, target: &str) -> Result<(), Error> {
-    let mut install = manager
-        .start_toolchain_installation(target)
-        .map_err(|err| format_err!("failed to start toolchain install: {}", err))?;
-
+fn package_install_progress(mut install: PackageInstall) -> Result<(), Error> {
     let progress_bar = ProgressBar::new(install.total());
     progress_bar.set_message("Fetch");
     progress_bar.set_style(
@@ -131,9 +144,7 @@ fn install_toolchain_base(manager: &ToolchainManager, target: &str) -> Result<()
         progress_bar.set_position(progress);
     }
 
-    install
-        .wait_complete()
-        .map_err(|err| format_err!("could not complete toolchain installation: {}", err))?;
+    install.wait_complete()?;
 
     progress_bar.finish_and_clear();
 
