@@ -40,8 +40,15 @@ use self::package::PackageInstall;
 use self::toolchains::ToolchainManager;
 
 #[derive(StructOpt)]
+#[structopt(name = "cargo", author = "")]
+enum Cargo {
+    #[structopt(name = "cross")]
+    Cross(Command),
+}
+
+#[derive(StructOpt)]
 #[structopt(
-    name = "cargo-cross",
+    name = "cross",
     author = "",
     raw(
         global_settings = "&[AppSettings::UnifiedHelpMessage, AppSettings::VersionlessSubcommands]"
@@ -63,14 +70,16 @@ fn main() {
     let dirs =
         ProjectDirs::from("", "", "cargo-cross").expect("could not determine project directories");
 
-    if let Err(err) = command(dirs) {
+    let Cargo::Cross(cmd) = Cargo::from_args();
+
+    if let Err(err) = command(dirs, cmd) {
         eprintln!("{} {}", style("error:").red().bold(), err);
         process::exit(1);
     }
 }
 
-fn command(dirs: ProjectDirs) -> Result<(), Error> {
-    match Command::from_args() {
+fn command(dirs: ProjectDirs, cmd: Command) -> Result<(), Error> {
+    match cmd {
         Command::Build(opts) => command_build(dirs, opts),
     }
 }
