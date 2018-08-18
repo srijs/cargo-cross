@@ -38,6 +38,7 @@ mod utils;
 use self::cargo::CargoOptions;
 use self::package::PackageInstall;
 use self::toolchains::ToolchainManager;
+use self::utils::progress::ProgressObserver;
 
 #[derive(StructOpt)]
 #[structopt(name = "cargo", author = "")]
@@ -142,20 +143,28 @@ fn command_build(dirs: ProjectDirs, opts: CargoOptions) -> Result<(), Error> {
 
 fn package_install_progress(mut install: PackageInstall) -> Result<(), Error> {
     let progress_bar = ProgressBar::new(install.total());
-    progress_bar.set_message("Fetch");
+
     progress_bar.set_style(
         ProgressStyle::default_bar()
             .template("{msg:>12.cyan.bold} {bytes} / {total_bytes} [{wide_bar}] {percent}%  ")
             .progress_chars("=>-"),
     );
+    progress_bar.set_message("Fetch");
 
-    while let Some(progress) = install.wait_progress() {
-        progress_bar.set_position(progress);
+    struct ProgressBarObserver(ProgressBar);
+
+    impl ProgressObserver for ProgressBarObserver {
+        fn progress(&mut self, delta: u64) {
+            self.0.inc(delta);
+        }
+
+        fn complete(&mut self) {
+            self.0.finish_and_clear();
+        }
     }
 
-    install.wait_complete()?;
-
-    progress_bar.finish_and_clear();
+    install.start(ProgressBarObserver(progress_bar))?;
+    install.wait()?;
 
     Ok(())
 }

@@ -8,7 +8,7 @@ use reqwest::{Client, Url};
 use tar::Archive;
 use tempfile;
 
-use utils::read_progress;
+use utils::progress;
 
 #[derive(Debug)]
 pub struct PackageManager {
@@ -32,55 +32,58 @@ impl PackageManager {
         total_size: u64,
         local_path: PathBuf,
     ) -> Result<PackageInstall, Error> {
-        debug!(
-            "install {} {} {}",
-            remote_path,
-            total_size,
-            local_path.display()
-        );
+        debug!("install {}", remote_path);
         let url = self.base_url.join(remote_path)?;
         let client = self.client.clone();
         let temp_dir = tempfile::tempdir()?;
-        let temp_dir_path = temp_dir.as_ref().to_path_buf();
-        debug!("temp dir {}", temp_dir_path.display());
-        let response = client.get(url).send()?.error_for_status()?;
-        let (read, progress_signal) = read_progress::read_progress(response);
-        let join_handle = thread::spawn(move || {
-            let bunzip = BzDecoder::new(read);
-            let mut archive = Archive::new(bunzip);
-            archive.unpack(&temp_dir_path)?;
-            fs::create_dir_all(local_path.parent().unwrap())?;
-            Ok(fs::rename(temp_dir_path, local_path)?)
-        });
+        debug!("temp dir {:?}", temp_dir);
 
         Ok(PackageInstall {
             total_size,
-            progress_signal,
+            client,
+            url,
+            local_path,
             temp_dir,
-            join_handle,
+            join_handle: None,
         })
     }
 }
 
 pub struct PackageInstall {
     total_size: u64,
-    progress_signal: read_progress::ReadProgressSignal,
+    client: Client,
+    url: Url,
     temp_dir: tempfile::TempDir,
-    join_handle: thread::JoinHandle<Result<(), Error>>,
+    local_path: PathBuf,
+    join_handle: Option<thread::JoinHandle<Result<(), Error>>>,
 }
 
 impl PackageInstall {
+    pub fn start<P>(&mut self, observer: P) -> Result<(), Error>
+    where
+        P: progress::ProgressObserver + Send + 'static,
+    {
+        let response = self.client
+            .get(self.url.clone())
+            .send()?
+            .error_for_status()?;
+        let read = observer.observe_read(response);
+        let temp_dir_path = self.temp_dir.as_ref().to_path_buf();
+        self.join_handle = Some(thread::spawn(move || {
+            let bunzip = BzDecoder::new(read);
+            let mut archive = Archive::new(bunzip);
+            Ok(archive.unpack(temp_dir_path)?)
+        }));
+        Ok(())
+    }
+
     pub fn total(&self) -> u64 {
         self.total_size
     }
 
-    pub fn wait_progress(&mut self) -> Option<u64> {
-        self.progress_signal.next()
-    }
-
-    pub fn wait_complete(self) -> Result<(), Error> {
-        self.join_handle.join().unwrap()?;
-        drop(self.temp_dir);
-        Ok(())
+    pub fn wait(self) -> Result<(), Error> {
+        self.join_handle.unwrap().join().unwrap()?;
+        fs::create_dir_all(self.local_path.parent().unwrap())?;
+        Ok(fs::rename(self.temp_dir, self.local_path)?)
     }
 }
