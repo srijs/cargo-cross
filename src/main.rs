@@ -44,17 +44,17 @@ use self::utils::progress::ProgressObserver;
 #[structopt(
     name = "cargo",
     author = "",
-    raw(
-        global_settings = "&[AppSettings::UnifiedHelpMessage, AppSettings::VersionlessSubcommands]"
-    )
+    bin_name = "cargo",
+    raw(global_settings = "&[AppSettings::UnifiedHelpMessage]")
 )]
 enum Cargo {
-    #[structopt(name = "cross")]
+    #[structopt(
+        name = "cross", author = "", raw(global_settings = "&[AppSettings::VersionlessSubcommands]")
+    )]
     Cross(Command),
 }
 
 #[derive(StructOpt)]
-#[structopt(name = "cross", author = "")]
 enum Command {
     #[structopt(
         name = "build",
