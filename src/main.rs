@@ -1,4 +1,3 @@
-extern crate bzip2;
 extern crate console;
 extern crate directories;
 extern crate env_logger;
@@ -20,6 +19,7 @@ extern crate serde_json;
 extern crate structopt;
 extern crate tar;
 extern crate tempfile;
+extern crate xz2;
 
 use std::process;
 

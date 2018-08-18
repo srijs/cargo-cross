@@ -201,9 +201,9 @@ static TOOLCHAINS_BASE: &[ToolchainBase] = &[ToolchainBase {
     host_platform_triple: "x86_64-apple-darwin",
     target_platform_triple: "x86_64-unknown-linux-gnu",
     gcc_version: "4.8.5",
-    path: "target/x86_64-unknown-linux-gnu/base-x86_64-apple-darwin-36f6e7a0.tar.bz2",
-    size: 74774494,
-    checksum: "36f6e7a0",
+    path: "target/x86_64-unknown-linux-gnu/base-x86_64-apple-darwin-fd6ace95.tar.xz",
+    size: 38088452,
+    checksum: "fd6ace95",
 }];
 
 struct ToolchainFeature {
@@ -220,9 +220,9 @@ static TOOLCHAIN_FEATURES: &[ToolchainFeature] = &[ToolchainFeature {
     target_platform_triple: "x86_64-unknown-linux-gnu",
     crate_name: "openssl-sys",
     crate_version_req: "^0.9",
-    path: "target/x86_64-unknown-linux-gnu/feat-openssl-1.0.2o-f7f30de1.tar.bz2",
-    size: 1590145,
-    checksum: "f7f30de1",
+    path: "target/x86_64-unknown-linux-gnu/feat-openssl-1.0.2o-49b96e34.tar.xz",
+    size: 1359060,
+    checksum: "49b96e34",
     env_vars: &[
         ("OPENSSL_DIR", "{CARGO_CROSS_FEAT_PATH}"),
         ("OPENSSL_STATIC", "1"),

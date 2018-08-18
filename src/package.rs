@@ -2,11 +2,11 @@ use std::fs;
 use std::path::PathBuf;
 use std::thread;
 
-use bzip2::read::BzDecoder;
 use failure::Error;
 use reqwest::{Client, Url};
 use tar::Archive;
 use tempfile;
+use xz2::read::XzDecoder;
 
 use utils::progress;
 
@@ -70,7 +70,7 @@ impl PackageInstall {
         let read = observer.observe_read(response);
         let temp_dir_path = self.temp_dir.as_ref().to_path_buf();
         self.join_handle = Some(thread::spawn(move || {
-            let bunzip = BzDecoder::new(read);
+            let bunzip = XzDecoder::new(read);
             let mut archive = Archive::new(bunzip);
             Ok(archive.unpack(temp_dir_path)?)
         }));
