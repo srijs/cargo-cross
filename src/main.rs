@@ -41,20 +41,20 @@ use self::toolchains::ToolchainManager;
 use self::utils::progress::ProgressObserver;
 
 #[derive(StructOpt)]
-#[structopt(name = "cargo", author = "")]
+#[structopt(
+    name = "cargo",
+    author = "",
+    raw(
+        global_settings = "&[AppSettings::UnifiedHelpMessage, AppSettings::VersionlessSubcommands]"
+    )
+)]
 enum Cargo {
     #[structopt(name = "cross")]
     Cross(Command),
 }
 
 #[derive(StructOpt)]
-#[structopt(
-    name = "cross",
-    author = "",
-    raw(
-        global_settings = "&[AppSettings::UnifiedHelpMessage, AppSettings::VersionlessSubcommands]"
-    )
-)]
+#[structopt(name = "cross", author = "")]
 enum Command {
     #[structopt(
         name = "build",
