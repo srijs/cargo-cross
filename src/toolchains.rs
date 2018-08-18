@@ -101,15 +101,21 @@ impl ToolchainManager {
             .join(base.gcc_version)
             .join("include");
 
+        let gcc_include_fixed_path = path.join("lib")
+            .join("gcc")
+            .join(target)
+            .join(base.gcc_version)
+            .join("include-fixed");
+
         let mut cflags = OsString::from("-nostdinc");
         cflags.push(" -I ");
         cflags.push(&include_path);
         cflags.push(" -I ");
         cflags.push(&gcc_include_path);
+        cflags.push(" -I ");
+        cflags.push(&gcc_include_fixed_path);
         cflags.push(" -isystem ");
         cflags.push(&include_path);
-        cflags.push(" --sysroot ");
-        cflags.push(&path);
 
         let mut envs = vec![
             (
