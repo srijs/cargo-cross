@@ -5,6 +5,8 @@ rust:
   - nightly
 os:
   - osx
+before_script:
+  - rustup target add x86_64-unknown-linux-gnu
 notifications:
   email: false
 matrix:
