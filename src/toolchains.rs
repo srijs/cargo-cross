@@ -94,28 +94,22 @@ impl ToolchainManager {
         let path = self.get_toolchain_base_path(&base);
 
         let gcc_path = path.join("bin").join(format!("{}-gcc", target));
-        let include_path = path.join(target).join("include");
         let gcc_include_path = path.join("lib")
             .join("gcc")
             .join(target)
             .join(base.gcc_version)
             .join("include");
-
         let gcc_include_fixed_path = path.join("lib")
             .join("gcc")
             .join(target)
             .join(base.gcc_version)
             .join("include-fixed");
 
-        let mut cflags = OsString::from("-nostdinc");
-        cflags.push(" -I ");
-        cflags.push(&include_path);
+        let mut cflags = OsString::from("");
         cflags.push(" -I ");
         cflags.push(&gcc_include_path);
         cflags.push(" -I ");
         cflags.push(&gcc_include_fixed_path);
-        cflags.push(" -isystem ");
-        cflags.push(&include_path);
 
         let mut envs = vec![
             (
@@ -201,9 +195,9 @@ static TOOLCHAINS_BASE: &[ToolchainBase] = &[ToolchainBase {
     host_platform_triple: "x86_64-apple-darwin",
     target_platform_triple: "x86_64-unknown-linux-gnu",
     gcc_version: "4.8.5",
-    path: "target/x86_64-unknown-linux-gnu/base-x86_64-apple-darwin-fd6ace95.tar.xz",
-    size: 38088452,
-    checksum: "fd6ace95",
+    path: "target/x86_64-unknown-linux-gnu/base-x86_64-apple-darwin-4de47685.tar.xz",
+    size: 26366476,
+    checksum: "4de47685",
 }];
 
 struct ToolchainFeature {
