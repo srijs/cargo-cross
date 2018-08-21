@@ -7,7 +7,6 @@ extern crate heck;
 extern crate indicatif;
 #[macro_use]
 extern crate log;
-extern crate pbr;
 extern crate platforms;
 extern crate reqwest;
 extern crate semver;
