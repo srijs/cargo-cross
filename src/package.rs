@@ -84,6 +84,15 @@ impl PackageInstall {
     pub fn wait(self) -> Result<(), Error> {
         self.join_handle.unwrap().join().unwrap()?;
         fs::create_dir_all(self.local_path.parent().unwrap())?;
-        Ok(fs::rename(self.temp_dir, self.local_path)?)
+
+        if let Err(err) = fs::rename(self.temp_dir, &self.local_path) {
+            // a concurrent process might have installed the package,
+            // so we check if the path exists
+            if !self.local_path.exists() {
+                return Err(err.into());
+            }
+        }
+
+        Ok(())
     }
 }
