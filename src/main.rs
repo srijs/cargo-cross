@@ -25,7 +25,7 @@ use std::process;
 use console::style;
 use directories::ProjectDirs;
 use failure::Error;
-use indicatif::{ProgressBar, ProgressStyle};
+use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
 use structopt::clap::AppSettings;
 use structopt::StructOpt;
 
@@ -102,7 +102,7 @@ fn command_build(dirs: ProjectDirs, opts: CargoOptions) -> Result<(), Error> {
         );
     }
 
-    println!(
+    eprintln!(
         "{:>12} {} (gcc {})",
         style("Toolchain").magenta().bold(),
         opts.target,
@@ -118,7 +118,7 @@ fn command_build(dirs: ProjectDirs, opts: CargoOptions) -> Result<(), Error> {
 
     for package in metadata.packages.iter() {
         if manager.is_toolchain_feature_available(&opts.target, &package) {
-            println!(
+            eprintln!(
                 "{:>12} {} v{}",
                 style("Support").magenta().bold(),
                 package.name,
@@ -142,7 +142,7 @@ fn command_build(dirs: ProjectDirs, opts: CargoOptions) -> Result<(), Error> {
 
 fn package_install_progress(mut install: PackageInstall) -> Result<(), Error> {
     let progress_bar = ProgressBar::new(install.total());
-
+    progress_bar.set_draw_target(ProgressDrawTarget::stderr());
     progress_bar.set_style(
         ProgressStyle::default_bar()
             .template("{msg:>12.cyan.bold} {bytes} / {total_bytes} [{wide_bar}] {percent}%  ")
