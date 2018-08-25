@@ -35,6 +35,8 @@ pub struct CargoOptions {
     pub examples: bool,
     #[structopt(long = "release", help = "Build artifacts in release mode, with optimizations")]
     pub release: bool,
+    #[structopt(short = "v", long = "verbose", help = "Use verbose output", parse(from_occurrences))]
+    pub verbose: u64,
 }
 
 impl CargoOptions {
@@ -63,6 +65,15 @@ impl CargoOptions {
         }
         if self.release {
             command.arg("--release");
+        }
+        self.apply_verbose(command);
+    }
+
+    fn apply_verbose(&self, command: &mut process::Command) {
+        if self.verbose == 1 {
+            command.arg("-v");
+        } else if self.verbose > 1 {
+            command.arg("-vv");
         }
     }
 }
