@@ -11,7 +11,7 @@ use cargo_toml_builder::prelude::*;
 use heck::SnakeCase;
 use tempfile::TempDir;
 
-fn compile_test(crate_name: &str, crate_version: &str, target: &str) {
+fn compile_test(crate_name: &str, crate_version: &str, target: &str, main: &str) {
     let project_dir = TempDir::new().unwrap();
 
     let toml = CargoToml::builder()
@@ -22,8 +22,9 @@ fn compile_test(crate_name: &str, crate_version: &str, target: &str) {
         .unwrap();
 
     let main = format!(
-        "extern crate {};\n\nfn main() {{}}\n",
-        crate_name.to_snake_case()
+        "extern crate {};\n\nfn main() {{ {} }}\n",
+        crate_name.to_snake_case(),
+        main
     );
 
     fs::write(project_dir.as_ref().join("Cargo.toml"), toml.to_string()).unwrap();
@@ -39,10 +40,20 @@ fn compile_test(crate_name: &str, crate_version: &str, target: &str) {
 
 #[test]
 fn openssl_sys_for_x86_64_unknown_linux_gnu() {
-    compile_test("openssl-sys", "0.9.35", "x86_64-unknown-linux-gnu");
+    compile_test(
+        "openssl-sys",
+        "0.9.35",
+        "x86_64-unknown-linux-gnu",
+        "::openssl_sys::init();",
+    );
 }
 
 #[test]
 fn lzma_sys_for_x86_64_unknown_linux_gnu() {
-    compile_test("lzma-sys", "0.1.10", "x86_64-unknown-linux-gnu");
+    compile_test(
+        "lzma-sys",
+        "0.1.10",
+        "x86_64-unknown-linux-gnu",
+        "unsafe { ::lzma_sys::lzma_version_number(); }",
+    );
 }
