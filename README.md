@@ -1,4 +1,7 @@
-# cargo-cross [![Build Status](https://travis-ci.org/srijs/cargo-cross.svg?branch=master)](https://travis-ci.org/srijs/cargo-cross)
+# cargo-cross
+
+[![Build Status](https://travis-ci.org/srijs/cargo-cross.svg?branch=master)](https://travis-ci.org/srijs/cargo-cross)
+[![Dependency Status](https://deps.rs/repo/github/srijs/cargo-cross/status.svg)](https://deps.rs/repo/github/srijs/cargo-cross)
 
 ## Usage
 
