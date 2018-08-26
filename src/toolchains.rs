@@ -10,7 +10,6 @@ use semver::VersionReq;
 use cargo::{CargoPackage, CargoProject};
 use package::{PackageInstall, PackageManager};
 
-#[derive(Debug)]
 pub struct ToolchainManager {
     dirs: ProjectDirs,
     host: platforms::Platform,
@@ -192,7 +191,7 @@ struct ToolchainBase {
     size: u64,
 }
 
-static TOOLCHAIN_MIRROR: &str = "https://d3ojaw7tkwhzj5.cloudfront.net/";
+static TOOLCHAIN_MIRROR: &str = "https://d3ojaw7tkwhzj5.cloudfront.net";
 
 static TOOLCHAINS_BASE: &[ToolchainBase] = &[ToolchainBase {
     host_platform_triple: "x86_64-apple-darwin",

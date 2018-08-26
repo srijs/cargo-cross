@@ -1,8 +1,9 @@
 use std::fs;
 use std::path::PathBuf;
+use std::rc::Rc;
 
+use chttp::Client;
 use failure::Error;
-use reqwest::{Client, Url};
 use tar::Archive;
 use tempfile;
 use xz2::read::XzDecoder;
@@ -10,19 +11,17 @@ use xz2::read::XzDecoder;
 use utils::hasher;
 use utils::progress;
 
-#[derive(Debug)]
 pub struct PackageManager {
-    base_url: Url,
-    client: Client,
+    base_url: String,
+    client: Rc<Client>,
 }
 
 impl PackageManager {
     pub fn new(base_url: &str) -> Result<Self, Error> {
-        let parsed_base_url = base_url.parse()?;
         let client = Client::new();
         Ok(PackageManager {
-            base_url: parsed_base_url,
-            client,
+            base_url: base_url.to_owned(),
+            client: Rc::new(client),
         })
     }
 
@@ -34,7 +33,7 @@ impl PackageManager {
         local_path: PathBuf,
     ) -> Result<PackageInstall, Error> {
         debug!("install {}", remote_path);
-        let url = self.base_url.join(remote_path)?;
+        let url = format!("{}/{}", self.base_url, remote_path);
         let client = self.client.clone();
         Ok(PackageInstall {
             total_size,
@@ -49,8 +48,8 @@ impl PackageManager {
 pub struct PackageInstall {
     total_size: u64,
     checksum: &'static str,
-    client: Client,
-    url: Url,
+    client: Rc<Client>,
+    url: String,
     local_path: PathBuf,
 }
 
@@ -66,11 +65,12 @@ impl PackageInstall {
         let temp_dir = tempfile::tempdir()?;
         debug!("temp dir {:?}", temp_dir);
 
-        let response = self.client
-            .get(self.url.clone())
-            .send()?
-            .error_for_status()?;
-        let read = observer.observe_read(response);
+        let response = self.client.get(&self.url)?;
+        if !response.status().is_success() {
+            bail!("unexpected status code {}", response.status());
+        }
+
+        let read = observer.observe_read(response.into_body());
         let hash = hasher::ReadHasher::new(read);
         let bunzip = XzDecoder::new(hash);
         let mut archive = Archive::new(bunzip);

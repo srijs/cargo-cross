@@ -1,3 +1,4 @@
+extern crate chttp;
 extern crate console;
 extern crate directories;
 extern crate env_logger;
@@ -8,7 +9,6 @@ extern crate indicatif;
 #[macro_use]
 extern crate log;
 extern crate platforms;
-extern crate reqwest;
 extern crate semver;
 extern crate serde;
 #[macro_use]
