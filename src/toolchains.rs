@@ -112,6 +112,7 @@ impl ToolchainManager {
         cflags.push(&gcc_include_fixed_path);
 
         let mut envs = vec![
+            ("CARGO_TARGET_DIR".into(), "target/cross".into()),
             (
                 format!("CARGO_TARGET_{}_LINKER", target.to_shouty_snake_case()),
                 gcc_path.clone().into_os_string(),
