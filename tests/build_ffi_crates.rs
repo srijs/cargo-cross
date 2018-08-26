@@ -57,3 +57,13 @@ fn lzma_sys_for_x86_64_unknown_linux_gnu() {
         "unsafe { ::lzma_sys::lzma_version_number(); }",
     );
 }
+
+#[test]
+fn libz_sys_for_x86_64_unknown_linux_gnu() {
+    compile_test(
+        "libz-sys",
+        "1.0.20",
+        "x86_64-unknown-linux-gnu",
+        "unsafe { ::libz_sys::zlibVersion(); }",
+    );
+}

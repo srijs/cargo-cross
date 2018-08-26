@@ -35,7 +35,12 @@ pub struct CargoOptions {
     pub examples: bool,
     #[structopt(long = "release", help = "Build artifacts in release mode, with optimizations")]
     pub release: bool,
-    #[structopt(short = "v", long = "verbose", help = "Use verbose output", parse(from_occurrences))]
+    #[structopt(
+        short = "v",
+        long = "verbose",
+        help = "Use verbose output (-vv very verbose/build.rs output)",
+        parse(from_occurrences)
+    )]
     pub verbose: u64,
 }
 

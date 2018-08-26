@@ -118,6 +118,7 @@ impl ToolchainManager {
             ),
             ("TARGET_CC".into(), gcc_path.clone().into_os_string()),
             ("TARGET_CFLAGS".into(), cflags),
+            ("CHOST".into(), target.into()),
         ];
 
         for cargo_pkg in project.packages.iter() {
