@@ -211,15 +211,29 @@ struct ToolchainFeature {
     env_vars: &'static [(&'static str, &'static str)],
 }
 
-static TOOLCHAIN_FEATURES: &[ToolchainFeature] = &[ToolchainFeature {
-    target_platform_triple: "x86_64-unknown-linux-gnu",
-    crate_name: "openssl-sys",
-    crate_version_req: "^0.9",
-    path: "target/x86_64-unknown-linux-gnu/feat-openssl-1.0.2o-49b96e34.tar.xz",
-    size: 1359060,
-    checksum: "49b96e34",
-    env_vars: &[
-        ("OPENSSL_DIR", "{CARGO_CROSS_FEAT_PATH}"),
-        ("OPENSSL_STATIC", "1"),
-    ],
-}];
+static TOOLCHAIN_FEATURES: &[ToolchainFeature] = &[
+    ToolchainFeature {
+        target_platform_triple: "x86_64-unknown-linux-gnu",
+        crate_name: "openssl-sys",
+        crate_version_req: "^0.9",
+        path: "target/x86_64-unknown-linux-gnu/feat-openssl-1.0.2o-49b96e34.tar.xz",
+        size: 1359060,
+        checksum: "49b96e34",
+        env_vars: &[
+            ("OPENSSL_DIR", "{CARGO_CROSS_FEAT_PATH}"),
+            ("OPENSSL_STATIC", "1"),
+        ],
+    },
+    ToolchainFeature {
+        target_platform_triple: "x86_64-unknown-linux-gnu",
+        crate_name: "libsqlite3-sys",
+        crate_version_req: "^0.9",
+        path: "target/x86_64-unknown-linux-gnu/feat-sqlite-3.24.0-3c3476b3.tar.xz",
+        size: 532560,
+        checksum: "3c3476b3",
+        env_vars: &[
+            ("SQLITE3_INCLUDE_DIR", "{CARGO_CROSS_FEAT_PATH}/include"),
+            ("SQLITE3_LIB_DIR", "{CARGO_CROSS_FEAT_PATH}/lib"),
+        ],
+    },
+];

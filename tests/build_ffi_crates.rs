@@ -80,10 +80,15 @@ fn lzma_sys_0_1_10_for_x86_64_unknown_linux_gnu() {
 
 #[test]
 fn bzip2_sys_0_1_6_for_x86_64_unknown_linux_gnu() {
+    compile_test("bzip2-sys", "0.1.6", "x86_64-unknown-linux-gnu", "");
+}
+
+#[test]
+fn libsqlite3_sys_0_9_3_for_x86_64_unknown_linux_gnu() {
     compile_test(
-        "bzip2-sys",
-        "0.1.6",
+        "libsqlite3-sys",
+        "0.9.3",
         "x86_64-unknown-linux-gnu",
-        ""
+        "unsafe { ::libsqlite3_sys::sqlite3_libversion(); }",
     );
 }
