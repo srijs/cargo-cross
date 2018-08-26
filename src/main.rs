@@ -140,7 +140,7 @@ fn command_build(dirs: ProjectDirs, opts: CargoOptions) -> Result<(), Error> {
     Ok(())
 }
 
-fn package_install_progress(mut install: PackageInstall) -> Result<(), Error> {
+fn package_install_progress(install: PackageInstall) -> Result<(), Error> {
     let progress_bar = ProgressBar::new(install.total());
     progress_bar.set_draw_target(ProgressDrawTarget::stderr());
     progress_bar.set_style(
@@ -162,8 +162,7 @@ fn package_install_progress(mut install: PackageInstall) -> Result<(), Error> {
         }
     }
 
-    install.start(ProgressBarObserver(progress_bar))?;
-    install.wait()?;
+    install.perform(ProgressBarObserver(progress_bar))?;
 
     Ok(())
 }

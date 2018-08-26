@@ -1,6 +1,5 @@
 use std::fs;
 use std::path::PathBuf;
-use std::thread;
 
 use failure::Error;
 use reqwest::{Client, Url};
@@ -35,16 +34,11 @@ impl PackageManager {
         debug!("install {}", remote_path);
         let url = self.base_url.join(remote_path)?;
         let client = self.client.clone();
-        let temp_dir = tempfile::tempdir()?;
-        debug!("temp dir {:?}", temp_dir);
-
         Ok(PackageInstall {
             total_size,
             client,
             url,
             local_path,
-            temp_dir,
-            join_handle: None,
         })
     }
 }
@@ -53,39 +47,33 @@ pub struct PackageInstall {
     total_size: u64,
     client: Client,
     url: Url,
-    temp_dir: tempfile::TempDir,
     local_path: PathBuf,
-    join_handle: Option<thread::JoinHandle<Result<(), Error>>>,
 }
 
 impl PackageInstall {
-    pub fn start<P>(&mut self, observer: P) -> Result<(), Error>
+    pub fn total(&self) -> u64 {
+        self.total_size
+    }
+
+    pub fn perform<P>(self, observer: P) -> Result<(), Error>
     where
         P: progress::ProgressObserver + Send + 'static,
     {
+        let temp_dir = tempfile::tempdir()?;
+        debug!("temp dir {:?}", temp_dir);
+
         let response = self.client
             .get(self.url.clone())
             .send()?
             .error_for_status()?;
         let read = observer.observe_read(response);
-        let temp_dir_path = self.temp_dir.as_ref().to_path_buf();
-        self.join_handle = Some(thread::spawn(move || {
-            let bunzip = XzDecoder::new(read);
-            let mut archive = Archive::new(bunzip);
-            Ok(archive.unpack(temp_dir_path)?)
-        }));
-        Ok(())
-    }
+        let bunzip = XzDecoder::new(read);
+        let mut archive = Archive::new(bunzip);
+        archive.unpack(&temp_dir)?;
 
-    pub fn total(&self) -> u64 {
-        self.total_size
-    }
-
-    pub fn wait(self) -> Result<(), Error> {
-        self.join_handle.unwrap().join().unwrap()?;
         fs::create_dir_all(self.local_path.parent().unwrap())?;
 
-        if let Err(err) = fs::rename(self.temp_dir, &self.local_path) {
+        if let Err(err) = fs::rename(temp_dir, &self.local_path) {
             // a concurrent process might have installed the package,
             // so we check if the path exists
             if !self.local_path.exists() {
