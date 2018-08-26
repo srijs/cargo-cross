@@ -92,3 +92,13 @@ fn libsqlite3_sys_0_9_3_for_x86_64_unknown_linux_gnu() {
         "unsafe { ::libsqlite3_sys::sqlite3_libversion(); }",
     );
 }
+
+#[test]
+fn brotli_sys_0_3_2_for_x86_64_unknown_linux_gnu() {
+    compile_test(
+        "brotli-sys",
+        "0.3.2",
+        "x86_64-unknown-linux-gnu",
+        "unsafe { ::brotli_sys::BrotliEncoderVersion(); }",
+    );
+}
