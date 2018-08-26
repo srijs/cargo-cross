@@ -39,7 +39,7 @@ fn compile_test(crate_name: &str, crate_version: &str, target: &str, main: &str)
 }
 
 #[test]
-fn openssl_sys_for_x86_64_unknown_linux_gnu() {
+fn openssl_sys_0_9_35_for_x86_64_unknown_linux_gnu() {
     compile_test(
         "openssl-sys",
         "0.9.35",
@@ -49,7 +49,27 @@ fn openssl_sys_for_x86_64_unknown_linux_gnu() {
 }
 
 #[test]
-fn lzma_sys_for_x86_64_unknown_linux_gnu() {
+fn miniz_sys_0_1_10_for_x86_64_unknown_linux_gnu() {
+    compile_test(
+        "miniz-sys",
+        "0.1.10",
+        "x86_64-unknown-linux-gnu",
+        "unsafe { ::miniz_sys::mz_crc32(0, ::std::ptr::null(), 0); }",
+    );
+}
+
+#[test]
+fn libz_sys_1_0_20_for_x86_64_unknown_linux_gnu() {
+    compile_test(
+        "libz-sys",
+        "1.0.20",
+        "x86_64-unknown-linux-gnu",
+        "unsafe { ::libz_sys::zlibVersion(); }",
+    );
+}
+
+#[test]
+fn lzma_sys_0_1_10_for_x86_64_unknown_linux_gnu() {
     compile_test(
         "lzma-sys",
         "0.1.10",
@@ -59,11 +79,11 @@ fn lzma_sys_for_x86_64_unknown_linux_gnu() {
 }
 
 #[test]
-fn libz_sys_for_x86_64_unknown_linux_gnu() {
+fn bzip2_sys_0_1_6_for_x86_64_unknown_linux_gnu() {
     compile_test(
-        "libz-sys",
-        "1.0.20",
+        "bzip2-sys",
+        "0.1.6",
         "x86_64-unknown-linux-gnu",
-        "unsafe { ::libz_sys::zlibVersion(); }",
+        ""
     );
 }
