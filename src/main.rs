@@ -14,6 +14,7 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+extern crate sha1;
 #[macro_use]
 extern crate structopt;
 extern crate tar;

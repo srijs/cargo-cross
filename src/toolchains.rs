@@ -69,7 +69,8 @@ impl ToolchainManager {
         let base = self.find_toolchain_base(target)
             .ok_or_else(|| format_err!("no toolchain available for target {}", target))?;
         let path = self.get_toolchain_base_path(&base);
-        self.package_manager.install(base.path, base.size, path)
+        self.package_manager
+            .install(base.path, base.size, base.checksum, path)
     }
 
     pub fn start_toolchain_feature_installation(
@@ -81,7 +82,7 @@ impl ToolchainManager {
             .ok_or_else(|| format_err!("toolchain feature not available for target {}", target))?;
         let path = self.get_toolchain_feature_path(&feature);
         self.package_manager
-            .install(feature.path, feature.size, path)
+            .install(feature.path, feature.size, feature.checksum, path)
     }
 
     pub fn get_toolchain_environment(
@@ -199,7 +200,7 @@ static TOOLCHAINS_BASE: &[ToolchainBase] = &[ToolchainBase {
     gcc_version: "4.8.5",
     path: "target/x86_64-unknown-linux-gnu/base-x86_64-apple-darwin-4de47685.tar.xz",
     size: 26366476,
-    checksum: "4de47685",
+    checksum: "4de476857501db4748be7e3df4b42c52a3772ad6",
 }];
 
 struct ToolchainFeature {
@@ -219,7 +220,7 @@ static TOOLCHAIN_FEATURES: &[ToolchainFeature] = &[
         crate_version_req: "^0.9",
         path: "target/x86_64-unknown-linux-gnu/feat-openssl-1.0.2p-1c466e90.tar.xz",
         size: 1437664,
-        checksum: "1c466e90",
+        checksum: "1c466e9072d5c4c96e63b484d64b63a37290054f",
         env_vars: &[
             ("OPENSSL_DIR", "{CARGO_CROSS_FEAT_PATH}"),
             ("OPENSSL_STATIC", "1"),
@@ -231,7 +232,7 @@ static TOOLCHAIN_FEATURES: &[ToolchainFeature] = &[
         crate_version_req: "^0.9",
         path: "target/x86_64-unknown-linux-gnu/feat-sqlite-3.24.0-3c3476b3.tar.xz",
         size: 532560,
-        checksum: "3c3476b3",
+        checksum: "3c3476b32a284fb5f6096e4ad025d4786508e118",
         env_vars: &[
             ("SQLITE3_INCLUDE_DIR", "{CARGO_CROSS_FEAT_PATH}/include"),
             ("SQLITE3_LIB_DIR", "{CARGO_CROSS_FEAT_PATH}/lib"),

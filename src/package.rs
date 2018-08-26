@@ -7,6 +7,7 @@ use tar::Archive;
 use tempfile;
 use xz2::read::XzDecoder;
 
+use utils::hasher;
 use utils::progress;
 
 #[derive(Debug)]
@@ -29,6 +30,7 @@ impl PackageManager {
         &self,
         remote_path: &str,
         total_size: u64,
+        checksum: &'static str,
         local_path: PathBuf,
     ) -> Result<PackageInstall, Error> {
         debug!("install {}", remote_path);
@@ -36,6 +38,7 @@ impl PackageManager {
         let client = self.client.clone();
         Ok(PackageInstall {
             total_size,
+            checksum,
             client,
             url,
             local_path,
@@ -45,6 +48,7 @@ impl PackageManager {
 
 pub struct PackageInstall {
     total_size: u64,
+    checksum: &'static str,
     client: Client,
     url: Url,
     local_path: PathBuf,
@@ -67,9 +71,19 @@ impl PackageInstall {
             .send()?
             .error_for_status()?;
         let read = observer.observe_read(response);
-        let bunzip = XzDecoder::new(read);
+        let hash = hasher::ReadHasher::new(read);
+        let bunzip = XzDecoder::new(hash);
         let mut archive = Archive::new(bunzip);
         archive.unpack(&temp_dir)?;
+
+        let digest = archive.into_inner().into_inner().digest_hex();
+        if digest != self.checksum {
+            bail!(
+                "checksum mismatch (expected {}, got {})",
+                self.checksum,
+                digest
+            );
+        }
 
         fs::create_dir_all(self.local_path.parent().unwrap())?;
 
