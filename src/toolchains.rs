@@ -219,7 +219,7 @@ static TOOLCHAIN_FEATURES: &[ToolchainFeature] = &[
         crate_version_req: "^0.9",
         path: "target/x86_64-unknown-linux-gnu/feat-openssl-1.0.2p-1c466e90.tar.xz",
         size: 1437664,
-        checksum: "1437664",
+        checksum: "1c466e90",
         env_vars: &[
             ("OPENSSL_DIR", "{CARGO_CROSS_FEAT_PATH}"),
             ("OPENSSL_STATIC", "1"),
